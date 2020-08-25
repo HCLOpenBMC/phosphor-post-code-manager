@@ -128,7 +128,7 @@ struct PostCode : sdbusplus::server::object_t<post_code, delete_all>
             "PostCode is created");
         auto dir = fs::path(PostCodeListPath + node);
         fs::create_directories(dir);
-        strPostCodeListPath = PostCodeListPath + node;
+        strPostCodeListPath = PostCodeListPath + node + "/";
         strCurrentBootCycleIndexName = CurrentBootCycleIndexName;
         uint16_t index = 0;
         deserialize(
@@ -143,8 +143,7 @@ struct PostCode : sdbusplus::server::object_t<post_code, delete_all>
         currentBootCycleCount(count);
         maxBootCycleNum(MaxPostCodeCycles);
 
-    std::cerr<<"Postcode path : "<< PostCodePath + node <<"\n";
-    std::cerr<<"Host State path : "<< HostStatePath + node <<"\n";
+    std::cerr<<"PostCodeList Path : "<< strPostCodeListPath <<"\n";
     }
     ~PostCode()
     {
