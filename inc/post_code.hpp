@@ -143,7 +143,7 @@ struct PostCode : sdbusplus::server::object_t<post_code, delete_all>
         currentBootCycleCount(count);
         maxBootCycleNum(MaxPostCodeCycles);
 
-    std::cerr<<"PostCodeList Path : "<< strPostCodeListPath <<"\n";
+        std::cerr<<"PostCodeList Path : "<< strPostCodeListPath <<"\n";
     }
     ~PostCode()
     {

@@ -19,10 +19,10 @@
 
 void PostCode::deleteAll()
 {
-    auto dir = fs::path(PostCodeListPath + node  );
+    auto dir = fs::path(PostCodeListPath + node);
     std::uintmax_t n = fs::remove_all(dir);
     std::cerr << "clearPostCodes deleted " << n << " files in "
-              << PostCodeListPath +node << std::endl;
+              << PostCodeListPath + node << std::endl;
     fs::create_directories(dir);
     postCodes.clear();
     currentBootCycleIndex = 1;
@@ -43,7 +43,7 @@ std::vector<uint64_t> PostCode::getPostCodes(uint16_t index)
 
         decltype(postCodes) codes;
         deserializePostCodes(
-            fs::path(strPostCodeListPath  + std::to_string(bootNum)), codes);
+            fs::path(strPostCodeListPath + std::to_string(bootNum)), codes);
         for (std::pair<uint64_t, uint64_t> code : codes)
             codesVec.push_back(code.second);
     }
