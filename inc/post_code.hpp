@@ -34,18 +34,36 @@
 
 #define MaxPostCodeCycles 100
 
-static std::string node = "0";
-
-const static constexpr char *PostCodePath =
-    "/xyz/openbmc_project/state/boot/raw";
-const static constexpr char *PropertiesIntf = "org.freedesktop.DBus.Properties";
-const static constexpr char *PostCodeListPath =
-    "/var/lib/phosphor-post-code-manager/host";
 const static constexpr char *CurrentBootCycleCountName =
     "CurrentBootCycleCount";
 const static constexpr char *CurrentBootCycleIndexName =
     "CurrentBootCycleIndex";
-const static constexpr char *HostStatePath = "/xyz/openbmc_project/state/host";
+
+
+// Singleton holder to store host/node and other path information
+class PostCodeDataHolder {
+   static PostCodeDataHolder *instance;
+   
+   PostCodeDataHolder() {
+   }
+
+   public:
+   static PostCodeDataHolder *getInstance() {
+      if (!instance)
+      instance = new PostCodeDataHolder;
+      return instance;
+   }
+
+   int node;
+
+   const static constexpr char *PostCodePath =
+    "/xyz/openbmc_project/state/boot/raw";
+   const static constexpr char *PropertiesIntf = "org.freedesktop.DBus.Properties";
+   const static constexpr char *PostCodeListPathPrefix =
+    "/var/lib/phosphor-post-code-manager/host";
+   const static constexpr char *HostStatePathPrefix = "/xyz/openbmc_project/state/host";
+
+};
 
 struct EventDeleter
 {
@@ -65,14 +83,16 @@ using delete_all =
 
 struct PostCode : sdbusplus::server::object_t<post_code, delete_all>
 {
+    PostCodeDataHolder *postcodeDataHolderObj = postcodeDataHolderObj->getInstance();
+
     PostCode(sdbusplus::bus::bus &bus, const char *path, EventPtr &event) :
         sdbusplus::server::object_t<post_code, delete_all>(bus, path), bus(bus),
         propertiesChangedSignalRaw(
             bus,
             sdbusplus::bus::match::rules::type::signal() +
                 sdbusplus::bus::match::rules::member("PropertiesChanged") +
-                sdbusplus::bus::match::rules::path(PostCodePath + node) +
-                sdbusplus::bus::match::rules::interface(PropertiesIntf),
+                sdbusplus::bus::match::rules::path(postcodeDataHolderObj->PostCodePath + std::to_string(postcodeDataHolderObj->node)) +
+                sdbusplus::bus::match::rules::interface(postcodeDataHolderObj->PropertiesIntf),
             [this](sdbusplus::message::message &msg) {
                 std::string objectName;
                 std::map<std::string, std::variant<uint64_t>> msgData;
@@ -91,8 +111,8 @@ struct PostCode : sdbusplus::server::object_t<post_code, delete_all>
             bus,
             sdbusplus::bus::match::rules::type::signal() +
                 sdbusplus::bus::match::rules::member("PropertiesChanged") +
-                sdbusplus::bus::match::rules::path(HostStatePath + node) +
-                sdbusplus::bus::match::rules::interface(PropertiesIntf),
+                sdbusplus::bus::match::rules::path(postcodeDataHolderObj->HostStatePathPrefix + std::to_string(postcodeDataHolderObj->node)) +
+                sdbusplus::bus::match::rules::interface(postcodeDataHolderObj->PropertiesIntf),
             [this](sdbusplus::message::message &msg) {
                 std::string objectName;
                 std::map<std::string, std::variant<std::string>> msgData;
@@ -126,9 +146,9 @@ struct PostCode : sdbusplus::server::object_t<post_code, delete_all>
     {
         phosphor::logging::log<phosphor::logging::level::INFO>(
             "PostCode is created");
-        auto dir = fs::path(PostCodeListPath + node);
+        auto dir = fs::path(postcodeDataHolderObj->PostCodeListPathPrefix + std::to_string(postcodeDataHolderObj->node));
         fs::create_directories(dir);
-        strPostCodeListPath = PostCodeListPath + node + "/";
+        strPostCodeListPath = postcodeDataHolderObj->PostCodeListPathPrefix + std::to_string(postcodeDataHolderObj->node) + "/";
         strCurrentBootCycleIndexName = CurrentBootCycleIndexName;
         uint16_t index = 0;
         deserialize(
@@ -142,8 +162,6 @@ struct PostCode : sdbusplus::server::object_t<post_code, delete_all>
             count);
         currentBootCycleCount(count);
         maxBootCycleNum(MaxPostCodeCycles);
-
-        std::cerr<<"PostCodeList Path : "<< strPostCodeListPath <<"\n";
     }
     ~PostCode()
     {

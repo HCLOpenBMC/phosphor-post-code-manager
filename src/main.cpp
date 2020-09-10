@@ -14,15 +14,32 @@
 // limitations under the License.
 */
 #include "post_code.hpp"
+#include <getopt.h>
 
 int main(int argc, char* argv[])
 {
-    if (argc > 1)
-    {
-        node = argv[1];
-    }
+    PostCodeDataHolder *postcodeDataHolderObj = postcodeDataHolderObj->getInstance();
 
+    int arg;
+    int optIndex = 0;
     int ret = 0;
+
+    std::string intfName;
+
+    static struct option longOpts[] = {{"host", required_argument, 0, 'h'},
+                                       {0, 0, 0, 0}};
+
+    while ((arg = getopt_long(argc, argv, "h:", longOpts, &optIndex)) != -1)
+    {
+        switch (arg)
+        {
+            case 'h':
+                    postcodeDataHolderObj->node = std::stoi(optarg);
+                    break;
+            default:
+                break;
+        }
+    }
 
     phosphor::logging::log<phosphor::logging::level::INFO>(
         "Start post code manager service...");
@@ -41,8 +58,14 @@ int main(int argc, char* argv[])
     sdbusplus::bus::bus bus = sdbusplus::bus::new_default();
     sdbusplus::server::manager_t m{bus, DBUS_OBJECT_NAME};
 
-    std::string intfName = DBUS_INTF_NAME + node;
-    std::cerr<<"Interface Name : " <<intfName<<"\n";
+    if(postcodeDataHolderObj->node == 0)
+    {
+        intfName = DBUS_INTF_NAME;
+    }
+    else
+    {   
+        intfName = DBUS_INTF_NAME + std::to_string(postcodeDataHolderObj->node);
+    }
 
     bus.request_name(intfName.c_str());
 

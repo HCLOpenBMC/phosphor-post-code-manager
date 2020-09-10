@@ -17,12 +17,14 @@
 
 #include "iomanip"
 
+PostCodeDataHolder *PostCodeDataHolder::instance = 0;
+
 void PostCode::deleteAll()
 {
-    auto dir = fs::path(PostCodeListPath + node);
+    auto dir = fs::path(postcodeDataHolderObj->PostCodeListPathPrefix + std::to_string(postcodeDataHolderObj->node));
     std::uintmax_t n = fs::remove_all(dir);
     std::cerr << "clearPostCodes deleted " << n << " files in "
-              << PostCodeListPath + node << std::endl;
+              << postcodeDataHolderObj->PostCodeListPathPrefix + std::to_string(postcodeDataHolderObj->node) << std::endl;
     fs::create_directories(dir);
     postCodes.clear();
     currentBootCycleIndex = 1;
